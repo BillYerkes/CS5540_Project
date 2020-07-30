@@ -1,0 +1,96 @@
+#dfA.show(5)
+
+# Register the DataFrame as a SQL temporary view
+dfA.createOrReplaceTempView("tweet")
+
+dfHasHastags = spark.sql('select user.id, entities.hashtags from tweet where size(entities.hashtags) > 0 ')
+
+dfHasUrls = spark.sql('select user.id, entities.urls from tweet where size(entities.urls) > 0 ')
+
+dfHasHastags.createOrReplaceTempView("hashtags")
+
+#dfHasHastags.show(5)
+
+dfHasUrls.createOrReplaceTempView("urls")
+
+#dfHasUrls.show(5)
+
+dfUsers = spark.sql('select user.id, user.profile_text_color, user.verified, user.friends_count from tweet')
+dfUsers.createOrReplaceTempView("users")
+#dfUsers.show(5)
+
+dfRTUsers = spark.sql('select retweeted_status.user.id, retweeted_status.user.profile_text_color, retweeted_status.user.verified, retweeted_status.user.friends_count from tweet')
+dfRTUsers.createOrReplaceTempView("RTusers")
+
+print('Group by query of tweets, by having hashtags or having urls')
+#q11 = spark.sql('select (size(entities.urls) > 0) as HasUrls, (size(entities.hashtags) > 0) as HasHashtags, count(id) from tweet group by HasHashtags, HasUrls')
+#print(q11.show(10))
+#q11.write.csv('/content/q110.csv')
+#q11.repartition(1).write.csv("cc_out.csv", sep='|')
+
+#print('Intersect query of ids of users who have hashtags and users who have urls')
+#q12 = spark.sql('(SELECT id FROM hashtags) INTERSECT DISTINCT (SELECT id FROM urls)');
+#q12.show(5)
+
+#print('Query of the most popular profile text colors')
+#q13 = spark.sql('select profile_text_color, count(id) as ID_count from users group by profile_text_color order by ID_count DESC')
+#q13.repartition(1).write.csv("profile_color.csv", sep='|')
+#q13.show(10)
+
+#print('inner join query of users and retweet users')
+#q14 = spark.sql('select distinct users.id from users inner join RTusers on users.id = RTusers.id')
+#q14.show(10)
+
+#print('Average number of retweets for user who have over 1000 friends')
+#q15 = spark.sql('select user.id, avg(retweeted_status.retweet_count) avg_rtct, max(user.friends_count) as fcmax  from tweet group by user.id having fcmax > 1000 order by avg_rtct DESC')
+#q15.repartition(1).write.csv("Average_number_of_retweets.csv", sep='|')
+#print(q15.show(15))
+
+q15a = spark.sql('select count(id), user.friends_count as fc, avg(retweeted_status.retweet_count) as avg_rtct  from tweet group by fc having fc > 1000 order by avg_rtct DESC')
+q15a.repartition(1).write.csv("Average_number_of_retweets2.csv", sep='|')
+q15a.show(15)
+
+
+#print('---')
+#q16 = spark.sql('select avg(length(text)) as avg_length_of_tweets from tweet')
+#q16.show()
+
+#print('---')
+#q17 = spark.sql('select avg(size(entities.hashtags)) as avg_number_of_hashtags, avg(size(entities.urls)) as avg_number_of_urls from tweet')
+#q17.show()
+
+#print('---')
+#q18a = spark.sql('select "zero" as friend_range, count(user.friends_count) as fcc from tweet where user.friends_count = 0')
+
+#q18b = spark.sql('select "1 to 10" as friend_range, count(user.friends_count) as fcc from tweet where user.friends_count > 0 and user.friends_count <= 10')
+
+#q18c = spark.sql('select "11 to 1,000" as friend_range, count(user.friends_count) as fcc from tweet where user.friends_count > 10 and user.friends_count <= 1000')
+
+#q18d = spark.sql('select "1,001 to 10,000" as friend_range, count(user.friends_count) as fcc from tweet where user.friends_count > 1000 and user.friends_count <= 10000')
+
+#q18e = spark.sql('select "10,001 to 100,000" as friend_range, count(user.friends_count) as fcc from tweet where user.friends_count > 10000 and user.friends_count <= 100000')
+
+#q18e = spark.sql('select "100,000 to 1,000,000" as friend_range, count(user.friends_count) as fcc from tweet where user.friends_count > 100000 and user.friends_count <= 1000000')
+
+#q18f = spark.sql('select "> 1,000,000" as friend_range, count(user.friends_count) as fcc from tweet where user.friends_count > 1000000 ')
+
+#q18 = q18a.union(q18b)
+#q18 = q18.union(q18c)
+#q18 = q18.union(q18d)
+#q18 = q18.union(q18e)
+#q18 = q18.union(q18f)
+#q18.show()
+
+#q19 = spark.sql('select text from tweet where text like "%covid%" ')
+#q19.show()
+
+
+#q19 = spark.sql('select text from tweet TABLESAMPLE (50 Percent) where text like "%covid%" ')
+#q19.show()
+
+
+#q20 = spark.sql('select user.name, user.followers_count from tweet Distribute by followers_count ')
+#q20.show()
+
+#q20 = spark.sql('select user.name, user.followers_count from tweet Cluster by followers_count ')
+#q20.show()
